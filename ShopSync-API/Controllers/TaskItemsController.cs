@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ShopSync_API.Data;
+using ShopSync_API.Interfaces;
 using ShopSync_API.Models;
 
 namespace ShopSync_API.Controllers;
@@ -10,57 +8,58 @@ namespace ShopSync_API.Controllers;
 [Route("api/[controller]")]
 public class TaskItemsController : ControllerBase
 {
-    private ApiDbContext dbContext;
-    public TaskItemsController(ApiDbContext dbContext)
+    private ITaskRepository taskRepository;
+    public TaskItemsController(ITaskRepository taskRepository)
     {
-        this.dbContext = dbContext;
+        this.taskRepository = taskRepository;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllTaskItemsAsync()
+    public async Task<IActionResult> Get()
     {
-        return Ok(await dbContext.TaskItems.ToListAsync());
+        var taskItems = await taskRepository.GetAllTaskItemsAsync();
+        if (taskItems == null)
+            return NotFound();
+        return Ok(taskItems);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetTaskItemAsync(int id)
+    public async Task<IActionResult> Get(int id)
     {
-        var existingTaskItem = await dbContext.TaskItems.FirstOrDefaultAsync(t => t.Id == id);
-        if (existingTaskItem == null)
-            return NotFound($"The task item with id: {id} could not be found");
-        return Ok(existingTaskItem);
+        var taskItem = await taskRepository.GetTaskItemAsync(id);
+        if (taskItem == null)
+            return NotFound();
+        return Ok(taskItem);
     }
 
     [HttpPost]
-    public async Task<IActionResult> PostTaskItemAsync([FromForm] TaskItem taskItem)
+    public async Task<IActionResult> Post([FromForm] TaskItem taskItem)
     {
-        await dbContext.TaskItems.AddAsync(taskItem);
-        await dbContext.SaveChangesAsync();
-        return StatusCode(StatusCodes.Status201Created);
+        bool isAdded = await taskRepository.PostTaskItemAsync(taskItem);
+        if (isAdded)
+        {
+            return StatusCode(StatusCodes.Status201Created);
+        }
+        return BadRequest("Something went wrong");
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateTaskItem([FromForm] TaskItem taskItem, int id)
+    public async Task<IActionResult> Put([FromForm] TaskItem taskItem, int id)
     {
-        var existingTaskItem = await dbContext.TaskItems.FirstOrDefaultAsync(t => t.Id == id);
-        if (existingTaskItem == null)
-            return NotFound($"The task item with id: {id} could not be found");
+        bool isUpdated = await taskRepository.PutTaskItemAsync(taskItem, id);
+        if (isUpdated)
+            return Ok("Record successfully updated");
 
-        taskItem.Id = existingTaskItem.Id;
-        dbContext.TaskItems.Entry(existingTaskItem).CurrentValues.SetValues(taskItem);
-        await dbContext.SaveChangesAsync();
-        return StatusCode(StatusCodes.Status202Accepted);
+        return BadRequest("Something went wrong");
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTaskItem(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        var existingTaskItem = await dbContext.TaskItems.FirstOrDefaultAsync(t => t.Id == id);
-        if (existingTaskItem == null)
-            return NotFound($"The task item with id: {id} could not be found");
+        bool isDeleted = await taskRepository.DeleteTaskItemAsync(id);
+        if (isDeleted)
+            return Ok("Record has been deleted");
 
-        dbContext.TaskItems.Remove(existingTaskItem);
-        await dbContext.SaveChangesAsync();
-        return Ok();
+        return BadRequest("Something went wrong");
     }
 }
