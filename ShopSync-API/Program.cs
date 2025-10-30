@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ShopSync_API.Data;
+using ShopSync_API.Interfaces;
+using ShopSync_API.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddDbContext<ApiDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 
 var app = builder.Build();
 
