@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+namespace ShopSync_API.Models;
 
-namespace ShopSync_API.Models
+public class OrderDetails
 {
-    public class OrderDetails
-    {
-        
-    }
+    
 }
